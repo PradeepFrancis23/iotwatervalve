@@ -1,24 +1,10 @@
+// Root-level build.gradle file
 allprojects {
     repositories {
-        mavenCentral()
-        maven { url 'https://maven-other.tuya.com/repository/maven-releases/' }
-        maven { url "https://maven-other.tuya.com/repository/maven-commercial-releases/" }
-        maven { url 'https://jitpack.io' }
         google()
         mavenCentral()
-        maven { url 'https://maven.aliyun.com/repository/public' }
-        maven { url 'https://central.maven.org/maven2/' }
-        maven { url 'https://oss.sonatype.org/content/repositories/snapshots/' }
-        maven { url 'https://developer.huawei.com/repo/' }
     }
-    dependencies {
-        // classpath 'com.android.tools.build:gradle:8.3.0'
-    }
-
 }
-
-
-
 rootProject.buildDir = "../build"
 subprojects {
     project.buildDir = "${rootProject.buildDir}/${project.name}"
@@ -27,6 +13,61 @@ subprojects {
     project.evaluationDependsOn(":app")
 }
 
+repositories {
+   jcenter()
+   maven { url 'https://maven-other.tuya.com/repository/maven-releases/' }
+   maven { url "https://maven-other.tuya.com/repository/maven-commercial-releases/" }
+   maven { url 'https://jitpack.io' }
+   google()
+   mavenCentral()
+   maven { url 'https://maven.aliyun.com/repository/public' }
+   maven { url 'https://central.maven.org/maven2/' }
+   maven { url 'https://oss.sonatype.org/content/repositories/snapshots/' }
+   maven { url 'https://developer.huawei.com/repo/' }
+}
 tasks.register("clean", Delete) {
     delete rootProject.buildDir
 }
+
+// buildscript {
+//     repositories {
+//         mavenCentral()
+//         maven { url 'https://maven-other.tuya.com/repository/maven-releases/' }
+//         maven { url "https://maven-other.tuya.com/repository/maven-commercial-releases/" }
+//         maven { url 'https://jitpack.io' }
+//         google()
+//         maven { url 'https://maven.aliyun.com/repository/public' }
+//         maven { url 'https://central.maven.org/maven2/' }
+//         maven { url 'https://oss.sonatype.org/content/repositories/snapshots/' }
+//         maven { url 'https://developer.huawei.com/repo/' }
+//     }
+//     dependencies {
+//         classpath 'com.android.tools.build:gradle:8.3.2' // or your required version
+//     }
+// }
+
+// allprojects {
+//     repositories {
+//         mavenCentral()
+//         maven { url 'https://maven-other.tuya.com/repository/maven-releases/' }
+//         maven { url "https://maven-other.tuya.com/repository/maven-commercial-releases/" }
+//         maven { url 'https://jitpack.io' }
+//         google()
+//         maven { url 'https://maven.aliyun.com/repository/public' }
+//         maven { url 'https://central.maven.org/maven2/' }
+//         maven { url 'https://oss.sonatype.org/content/repositories/snapshots/' }
+//         maven { url 'https://developer.huawei.com/repo/' }
+//     }
+// }
+
+// rootProject.buildDir = "../build"
+// subprojects {
+//     project.buildDir = "${rootProject.buildDir}/${project.name}"
+// }
+// subprojects {
+//     project.evaluationDependsOn(":app")
+// }
+
+// tasks.register("clean", Delete) {
+//     delete rootProject.buildDir
+// }

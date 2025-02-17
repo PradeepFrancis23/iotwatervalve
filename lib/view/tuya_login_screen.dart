@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:smartwatervalve/view/tuya_dashboard.dart';
 
 import '../service/native_services.dart';
- // Redirect to main dashboard
+// Redirect to main dashboard
 
 class TuyaLoginScreen extends StatefulWidget {
   const TuyaLoginScreen({super.key});
@@ -28,11 +28,16 @@ class _TuyaLoginScreen extends State<TuyaLoginScreen> {
     }
 
     setState(() => _statusMessage = "Registering...");
-    String result = await _tuyaService.registerUser(_countryCode, email, password);
+    String result =
+        await _tuyaService.registerUser(_countryCode, email, password);
     setState(() => _statusMessage = result);
 
     if (result.contains("successful")) {
-      _loginUser();
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => TuyaLoginScreen()),
+      );
+      // _loginUser();
     }
   }
 

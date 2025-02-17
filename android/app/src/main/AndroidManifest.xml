@@ -17,14 +17,13 @@
     <uses-permission android:name="android.permission.WAKE_LOCK"/>
 
     <application
+        android:label="Smart Water Valve"
         android:name="com.example.smartwatervalve.MyApplication"
-        android:label="smartwatervalve"
         tools:replace="android:label"
-        android:icon="@mipmap/ic_launcher"
-        >
+        android:icon="@mipmap/ic_launcher">
 
 
-        <!-- Tuya SDK Meta-data -->
+       
         <meta-data
             android:name="THING_SMART_APPKEY"
             android:value="9wkgq98cnr8efu75ax5u"/>

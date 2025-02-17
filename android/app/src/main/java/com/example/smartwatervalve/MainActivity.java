@@ -21,11 +21,19 @@ import com.thingclips.smart.sdk.bean.DeviceBean;
 import com.thingclips.smart.home.sdk.callback.IThingGetHomeListCallback;
 import com.thingclips.smart.home.sdk.bean.HomeBean;
 import com.thingclips.smart.android.user.bean.User; 
-
+import com.thingclips.smart.sdk.api.IThingDataCallback;
+import com.thingclips.smart.sdk.api.IThingSmartActivatorListener;
+import com.thingclips.smart.sdk.api.IThingActivatorGetToken;
+import com.thingclips.smart.sdk.api.IThingActivator;
+import com.thingclips.smart.sdk.api.IThingDataCallback;
 import com.thingclips.smart.android.user.api.IRegisterCallback;
 import com.thingclips.smart.android.user.api.ILoginCallback;
+import com.thingclips.smart.sdk.enums.ActivatorModelEnum;
+import com.thingclips.smart.home.sdk.builder.ActivatorBuilder;
+
 import android.widget.Toast;
 import android.app.AlertDialog;
+
 
 public class MainActivity extends FlutterActivity implements TuyaAuthmanager.AuthorizeCallback {
     private static final String CHANNEL = "com.example.smartwatervalve";
@@ -33,6 +41,12 @@ public class MainActivity extends FlutterActivity implements TuyaAuthmanager.Aut
     private TuyaAuthmanager tuyaAuthManager;
     private long homeId;
     private ProgressDialog progressDialog;
+    // Declare mThingActivator at the class level
+    private IThingActivator mThingActivator;
+    private String regToken;
+
+
+    private DeviceBean currentDeviceBean;   
 
     // Show a Toast message
     public void showToast(String message) {
@@ -89,8 +103,17 @@ public class MainActivity extends FlutterActivity implements TuyaAuthmanager.Aut
                     String loginPassword = call.argument("password");
                     loginUser(loginCountryCode, loginEmail, loginPassword, result);
                 } else if (call.method.equals("searchDevices")) {
+                    searchTuyaDevice();
+                    // if(!hasPermissions()) {
+                    //     String token = call.argument("token");
+                    // searchTuyaDevice();
+                    // } else {
+                    //     requestPermissions();
+                    //     result.error("PERMISSION_DENIED", "Permissions denied, cannot search for devices.", null);
+
+
+                    // }
                     
-                    searchDevices();
                 } else {
                     result.notImplemented();
                 }
@@ -108,11 +131,12 @@ public class MainActivity extends FlutterActivity implements TuyaAuthmanager.Aut
                    ContextCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_ADMIN) == PackageManager.PERMISSION_GRANTED;
         }
     }
+    
 
     private void requestPermissions() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             ActivityCompat.requestPermissions(this,
-                new String[]{
+                new String[] {
                     Manifest.permission.ACCESS_FINE_LOCATION,
                     Manifest.permission.BLUETOOTH_SCAN,
                     Manifest.permission.BLUETOOTH_CONNECT
@@ -120,7 +144,7 @@ public class MainActivity extends FlutterActivity implements TuyaAuthmanager.Aut
                 PERMISSION_REQUEST_CODE);
         } else {
             ActivityCompat.requestPermissions(this,
-                new String[]{
+                new String[] {
                     Manifest.permission.ACCESS_FINE_LOCATION,
                     Manifest.permission.BLUETOOTH,
                     Manifest.permission.BLUETOOTH_ADMIN
@@ -128,20 +152,23 @@ public class MainActivity extends FlutterActivity implements TuyaAuthmanager.Aut
                 PERMISSION_REQUEST_CODE);
         }
     }
+    
 
-    @Override
-public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
-    super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-    if (requestCode == PERMISSION_REQUEST_CODE) {
-        if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-            // Permissions granted, proceed with device search
-//            searchDevices(resul);
-        } else {
-            // Permissions denied, show a message to the user
-            showToast("Permissions denied. Cannot search for devices.");
+
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (requestCode == PERMISSION_REQUEST_CODE) {
+            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                // Permissions granted, proceed with device search
+                String token = "your_token_here"; // Replace with actual token if needed
+                searchTuyaDevice();
+            } else {
+                // Permissions denied, show a message to the user
+                showToast("Permissions denied. Cannot search for devices.");
+            }
         }
     }
-}
+    
 
     private void registerUser(String countryCode, String email, String password, MethodChannel.Result result) {
         showLoading("Registering...");
@@ -165,6 +192,7 @@ public void onRequestPermissionsResult(int requestCode, @NonNull String[] permis
         showLoading("Logging in...");
         ThingHomeSdk.getUserInstance().loginWithEmail(countryCode, email, password, new ILoginCallback() {
             public void onSuccess(User user) {
+                createHome();
                 hideLoading();
                 showToast("Login Successful!");
                 result.success("Login successful");
@@ -190,102 +218,31 @@ public void onRequestPermissionsResult(int requestCode, @NonNull String[] permis
         Log.e("TuyaAuth", "❌ Login/Register error: " + error);
     }
 
-//    private void searchTuyaDevices(MethodChannel.Result result) {
-//        if(!hasPermissions()){
-//            requestPermissions();
-//            return;
-//        }
-//        // Show loading indicator
-//        showLoading("Searching for devices...");
-//
-//        // Log the start of the search
-//        Log.d("Tuya", "🔍 Starting device search...");
-//
-//        // Initialize the device search
-//        TuyaHomeSdk.getActivatorInstance().newSearch().start(new ITuyaActivatorListener() {
-//
-//            public void onError(String errorCode, String errorMsg) {
-//                // Hide loading indicator
-//                hideLoading();
-//
-//                // Log and show error message
-//                Log.e("Tuya", "❌ Search error: " + errorMsg);
-//                showAlert("Search Error", errorMsg);
-//
-//                // Return error to Flutter
-//                result.error(errorCode, errorMsg, null);
-//            }
-//
-//
-//            public void onActiveSuccess(DeviceBean deviceBean) {
-//                // Hide loading indicator
-//                hideLoading();
-//
-//                // Log and show success message
-//                Log.d("Tuya", "✅ Device found: " + deviceBean.getName());
-//                showToast("Device found: " + deviceBean.getName());
-//
-//                // Return success to Flutter
-//                result.success(deviceBean.getName());
-//            }
-//
-//
-//            public void onStep(String step, Object data) {
-//                // Handle each step of the activation process if needed
-//                Log.d("Tuya", "Step: " + step + ", Data: " + data);
-//            }
-//        });
-//
-//        // Stop the search after a predefined timeout (e.g., 10 seconds)
-//        new Handler(Looper.getMainLooper()).postDelayed(() -> {
-//            // Stop the device search
-//            // ThingHomeSdk.getActivatorInstance().stopSearch();
-//            TuyaHomeSdk.getActivatorInstance().newSearch().stop();
-//
-//
-//            // Hide loading indicator
-//            hideLoading();
-//
-//            // Inform the user that the search has ended
-//            showToast("Device search completed.");
-//
-//            // Log the end of the search
-//            Log.d("Tuya", "🔍 Device search completed.");
-//
-//            // Return result to Flutter
-//            result.success("Search completed");
-//        }, 10000); // 10,000 milliseconds = 10 seconds
-//    }
-//
+    // get token for device pairing to identify user
+    private void getRegistrationToken(){
+        ThingHomeSdk.getActivatorInstance().getActivatorToken(homeId, new IThingActivatorGetToken() {
+            
+            public void onSuccess(String token) {
+                Log.d("Tuya", "🔑 Registration token: " + token);
+                searchTuyaDevice(token);
+                // showToast("Registration token: " + token);
+            }
 
+          
+            public void onFailure(String errorCode, String errorMsg) {
+                Log.e("Tuya", "Error: " + errorCode + " - " + errorMsg);
+                showToast("Token error: " + errorMsg);
+            }
+        });
+    }
+
+
+    // samele for demo
     private void searchDevices() {
         showLoading("Searching for devices...");
         Log.d("Tuya", "🔍 Starting Wi-Fi/BLE search...");
 
-        // ThingSearchDevice.getInstance().startSearchDevice(new IThingSearchDeviceListener() {
-        //     @Override
-        //     public void onSearchDeviceSuccess(List<SearchDeviceBean> list) {
-        //         hideLoading();
-        //         if (list.isEmpty()) {
-        //             showToast("No Tuya devices found.");
-        //         } else {
-        //             Log.d("Tuya", "🔍 Found devices: " + list.size());
-        //             for (SearchDeviceBean device : list) {
-        //                 Log.d("Tuya", "🔍 Device: " + device.getDeviceName());
-        //             }
-        //             showToast("Devices found: " + list.size());
-        //         }
-        //         result.success(list.size());
-        //     }
-
-        //     @Override
-        //     public void onSearchDeviceError(String errorCode, String errorMsg) {
-        //         hideLoading();
-        //         Log.e("Tuya", "❌ Search error: " + errorMsg);
-        //         showAlert("Search Error", errorMsg);
-        //         result.error(errorCode, errorMsg, null);
-        //     }
-        // });
+      
 
         // Stop the search after a predefined timeout (e.g., 10 seconds)
         new Handler(Looper.getMainLooper()).postDelayed(() -> {
@@ -295,4 +252,103 @@ public void onRequestPermissionsResult(int requestCode, @NonNull String[] permis
 
         }, 10000); // 10,000 milliseconds = 10 seconds
     }
+
+     // create home
+     
+
+     private void createHome(String homeName,List<String> roomList){
+        ThingHomeSdk.getHomeManagerInstance().createHome(homeName,
+        120.52,
+                30.40,
+                "mumbai",
+            
+         roomList, new IThingHomeResultCallback() {
+            
+            public void onSuccess(HomeBean homeBean) {
+                currentDeviceBean = homeBean;
+                getRegistrationToken();
+                Log.d("Tuya", "🏠 Home created: " + homeBean.toString());
+                showToast("Home created: " + homeBean.getName());
+            }
+
+            
+            public void onError(String errorCode, String errorMsg) {
+                Log.e("Tuya", "Error: " + errorCode + " - " + errorMsg);
+                showToast("Home creation error: " + errorMsg);
+            }
+        });
+
+     }
+
+    private void searchTuyaDevice(String token) {
+        // Check if permissions are granted before starting the activation
+        if (!hasPermissions()) {
+            requestPermissions();
+            return;
+        }
+    
+        showLoading("Searching for devices...");
+    
+        // Adjusted timeout and added debugging logs
+        ActivatorBuilder builder = new ActivatorBuilder()
+            .setSsid("Pradeep")
+            .setContext(this)
+            .setPassword("123456789")
+            .setToken(token)
+            .setActivatorModel(ActivatorModelEnum.THING_AP)
+            .setTimeOut(100)  // Increased timeout to 30 seconds
+            .setListener(new IThingSmartActivatorListener() {
+    
+                @Override
+                public void onError(String errorCode, String errorMsg) {
+                    // Handle error
+                    Log.e("TuyaDeviceSearch", "Error: " + errorCode + " - " + errorMsg);
+                    showToast("Error: " + errorMsg);
+                    hideLoading();
+                }
+    
+                @Override
+                public void onActiveSuccess(DeviceBean devResp) {
+                    // Handle success
+                    Log.d("TuyaDeviceSearch", "Device detected: " + devResp.toString());
+                    showToast("Device Detection Successful");
+                    currentDeviceBean = devResp;
+                    System.out.println(currentDeviceBean);
+                    hideLoading();
+                    // You can add more code to handle the device pairing or other actions
+                }
+    
+                @Override
+                public void onStep(String step, Object data) {
+                    // Log each step for debugging
+                    Log.d("TuyaDeviceSearch", "Step: " + step);
+                    if (data != null) {
+                        Log.d("TuyaDeviceSearch", "Step data: " + data.toString());
+                    }
+                }
+            });
+    
+        // Initialize and start the activator
+        IThingActivator mThingActivator = ThingHomeSdk.getActivatorInstance().newActivator(builder);
+    
+        // Start the activation process
+        mThingActivator.start();
+    }
+
+   
+    
+
+    @Override
+protected void onDestroy() {
+    super.onDestroy();
+    
+    if (mThingActivator != null) {
+        mThingActivator.onDestroy();
+    }
+}
+
+    
+
+   
+
 }

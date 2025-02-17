@@ -11,6 +11,6 @@ public class MyApplication extends Application {
 
         // Initialize Tuya SDK
         ThingHomeSdk.init(this);
-        Log.d("Tuya", "✅ Tuya SDK Initialized");
+        Log.d("Tuya", "✅ Tuya SDK Initialized>>>>>>>>>>>");
     }
 }

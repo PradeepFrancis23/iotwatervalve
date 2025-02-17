@@ -5,7 +5,6 @@ import android.util.Log;
 import com.thingclips.smart.android.user.api.IRegisterCallback;
 import com.thingclips.smart.android.user.api.ILoginCallback;
 import com.thingclips.smart.android.user.bean.User;
-// import com.thingclips.smart.sdk.bean.SearchDeviceBean;
 import com.thingclips.smart.sdk.api.IThingSearchDeviceListener;
 import java.util.List;
 
